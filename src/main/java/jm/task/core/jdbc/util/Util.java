@@ -24,7 +24,6 @@ public class Util {
         try {
             Class.forName(DB_DRIVER);
             connection = DriverManager.getConnection(DB_URL, DB_USERNAME, DB_PASSWORD);
-            System.out.println("Connection OK");
         } catch (ClassNotFoundException | SQLException e) {
             e.printStackTrace();
         }
@@ -36,7 +35,7 @@ public class Util {
     public static SessionFactory getSessionFactory(){
 
             try {
-                Configuration cfg = new Configuration();
+
                 Properties properties = new Properties();
                 properties.setProperty("connection.driver_class", DB_DRIVER);
                 properties.setProperty("hibernate.connection.url", DB_URL);
@@ -47,12 +46,17 @@ public class Util {
                 properties.setProperty("hibernate.hbm2ddl.auto", "update");
                 properties.setProperty("hibernate.dialect", "org.hibernate.dialect.MySQLDialect");
 
-                cfg.setProperties(properties);
+                /*cfg.setProperties(properties);
                 cfg.addAnnotatedClass(User.class);
 
                 ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder()
                         .applySettings(cfg.getProperties()).build();
-                sessionFactory = cfg.buildSessionFactory(serviceRegistry);
+                sessionFactory = cfg.buildSessionFactory(serviceRegistry);*/
+
+                sessionFactory = new Configuration()
+                        .setProperties(properties)
+                        .addAnnotatedClass(User.class)
+                        .buildSessionFactory();
             } catch (Exception e){
                 e.printStackTrace();
             }

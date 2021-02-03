@@ -2,7 +2,7 @@ package jm.task.core.jdbc.dao;
 
 import jm.task.core.jdbc.model.User;
 import jm.task.core.jdbc.util.Util;
-import org.hibernate.HibernateException;
+
 import org.hibernate.Session;
 
 import java.util.ArrayList;
@@ -19,16 +19,19 @@ public class UserDaoHibernateImpl extends Util implements UserDao {
     public void createUsersTable() {
         try {
             Session session = getSessionFactory().openSession();
-            session.createSQLQuery("CREATE TABLE IF NOT EXISTS user (" +
+            session.beginTransaction();
+            session.createSQLQuery("CREATE TABLE IF NOT EXISTS users (" +
                     "id INTEGER not NULL AUTO_INCREMENT," +
                     "name VARCHAR(255) not NULL," +
                     "lastName VARCHAR(255) not NULL," +
                     "age INTEGER not NULL," +
                     "PRIMARY KEY (id))").executeUpdate();
+            session.getTransaction().commit();
             session.close();
-            System.out.println("table created");
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            getSessionFactory().close();
         }
     }
 
@@ -36,54 +39,61 @@ public class UserDaoHibernateImpl extends Util implements UserDao {
     public void dropUsersTable() {
         try {
             Session session = getSessionFactory().openSession();
-            session.createSQLQuery("DROP TABLE IF EXISTS user").executeUpdate();
+            session.beginTransaction();
+            session.createSQLQuery("DROP TABLE IF EXISTS users").executeUpdate();
+            session.getTransaction().commit();
             session.close();
-            System.out.println("table was deleted");
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            getSessionFactory().close();
         }
     }
 
     @Override
     public void saveUser(String name, String lastName, byte age) {
         try {
-            User user = new User(name, lastName, age);
             Session session = getSessionFactory().openSession();
             session.beginTransaction();
-            session.save(user);
+            session.save(new User(name, lastName, age));
             session.getTransaction().commit();
-            System.out.println("User с именем – "+name+" добавлен в базу данных");
+            System.out.println("User с именем – " + name + " добавлен в базу данных");
             session.close();
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            getSessionFactory().close();
         }
     }
 
     @Override
     public void removeUserById(long id) {
-        try{
-            User user;
+        try {
             Session session = getSessionFactory().openSession();
-            user = (User) session.load(User.class, id);
             session.beginTransaction();
+            User user = (User) session.get(User.class, id);
             session.delete(user);
             session.getTransaction().commit();
             session.close();
-            System.out.println("User с ID – "+id+" удален из базы данных");
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            getSessionFactory().close();
         }
     }
 
     @Override
     public List<User> getAllUsers() {
-        List<User> userList = new ArrayList<>();
+        List<User> userList = null;
         try {
             Session session = getSessionFactory().openSession();
-            userList = session.createCriteria(User.class).list();
+            session.beginTransaction();
+            userList = session.createQuery("from User").list();
             session.close();
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            getSessionFactory().close();
         }
         return userList;
     }
@@ -93,15 +103,13 @@ public class UserDaoHibernateImpl extends Util implements UserDao {
         try {
             Session session = getSessionFactory().openSession();
             session.beginTransaction();
-            List<User> userList = session.createCriteria(User.class).list();
-            for (User user: userList){
-                session.delete(user);
-            }
+            session.createQuery("delete User").executeUpdate();
             session.getTransaction().commit();
             session.close();
-            System.out.println("table was cleared");
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            getSessionFactory().close();
         }
     }
 }
